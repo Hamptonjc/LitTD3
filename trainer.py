@@ -1,8 +1,8 @@
 import torch
 import pytorch_lightning as pl
-from .litTD3 import LitTD3
-from .gymDataset import LitGymDataset
-from .config import TD3Config as config
+from litTD3 import LitTD3
+from gymDataset import LitGymDataset
+from config import TD3Config as config
 
 
 def train():
@@ -18,7 +18,7 @@ def train():
     callbacks.append(pl.callbacks.ModelCheckpoint(
                      monitor='reward',
                      dirpath=config.SAVED_MODEL_DIR,
-                     filename='{epoch:02d}-{val_loss:.10f}',
+                     filename='{epoch:02d}-{reward:.10f}',
                      save_top_k=config.SAVE_TOP_K,
                      mode='max',
                      save_last=True
@@ -31,7 +31,7 @@ def train():
     trainer = pl.Trainer(gpus=config.GPUS,
                          callbacks=callbacks,
                          logger=logger,
-                         val_check_interval=100)
+                         val_check_interval=config.VAL_CHECK_INTERVAL)
     # Fit
     trainer.fit(model=lit_model, datamodule=lit_gym_ds)
 

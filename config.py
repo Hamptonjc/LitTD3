@@ -26,3 +26,27 @@ class TD3Config:
 
     # (int) How many samples to take from the replay buffer at once
     SAMPLE_SIZE = 3
+
+    # (int) The number of iterations before the policy network & target networks are updated
+    UPDATE_POLICY_STEPS = 10
+
+    # (str) directory where training logs are stored
+    LOG_DIR = "./training-logs"
+
+    # (str) name of OpenAI Gym environment (Note: this system is designed for a 2-dimensional pixel state space)
+    GYM_ENVIRONMENT = 'CarRacing-v0'
+
+    # (str) Name of experiement
+    RUN_NAME = 'debugging'
+
+    # (Union[int, None]) number of GPUs to use (None -> cpu training)
+    GPUS = None
+
+    # (str) directory where saved models are stored
+    SAVED_MODEL_DIR = "./saved-models"
+
+    # (int) save only the top K performing models
+    SAVE_TOP_K = 1
+
+    # (int) validation step not implemented, however PL needs this anyway
+    VAL_CHECK_INTERVAL = 2

@@ -1,11 +1,10 @@
 # inspired from -> https://www.pytorchlightning.ai/blog/en-lightning-reinforcement-learning-building-a-dqn-with-pytorch-lightning
 
 # Imports
-from typing import Tuple
 import torch
 import gym
 import numpy as np
-from .gymDataset import Experience, ReplayBuffer
+from gymDataset import Experience, ReplayBuffer
 
 class Agent:
 
@@ -17,7 +16,7 @@ class Agent:
     def reset(self) -> None:
         self.state = self.env.reset()
 
-    def get_action(self, policy_network: torch.nn.Module, noise: float) -> float:
+    def get_action(self, policy_network: torch.nn.Module, noise: float) -> np.array:
         # Convert state from numpy array to torch tensor
         state = torch.tensor(self.state)
         # get action from policy network
@@ -25,10 +24,10 @@ class Agent:
         if noise != 0.0:
             noise = torch.normal(0, noise, size=action.shape)
             action = action + noise
-        return action.clamp(self.env.action_space.low, self.env.action_space.high).item()
+        return action.clamp(self.env.action_space.low, self.env.action_space.high).numpy()
 
     @torch.no_grad()
-    def play_step(self, policy_network: torch.nn.Module, action_noise: float = 0.0) -> Tuple[float, bool]:
+    def play_step(self, policy_network: torch.nn.Module, action_noise: float = 0.0) -> float:
         # Get action with exploration noise
         action = self.get_action(policy_network, action_noise)
         # take action step in the environment

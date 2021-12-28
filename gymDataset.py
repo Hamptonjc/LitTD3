@@ -4,7 +4,7 @@ from typing import Tuple, NamedTuple
 import torch
 import pytorch_lightning as pl
 import gym
-from .agent import Agent
+from agent import Agent
 
 
 #Experience = collections.namedtuple(
