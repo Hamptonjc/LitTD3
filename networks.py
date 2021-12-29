@@ -10,8 +10,7 @@ class PolicyNetwork(torch.nn.Module):
         #Conv
         self.resnet = torchvision.models.quantization.resnet18(pretrained=True)
         self.resnet.fc = torch.nn.Sequential(torch.nn.Linear(512,128), torch.nn.ReLU(),
-                                          torch.nn.Linear(128,64), torch.nn.ReLU(),
-                                          torch.nn.Linear(64, action_dim))
+                                          torch.nn.Linear(128, action_dim))
         
     def forward(self, x):
         x = self.resnet(x)
@@ -29,12 +28,10 @@ class QNetworks(torch.nn.Module):
         self.qnet2_conv = copy.deepcopy(self.qnet1_conv)
         # Q-Net 1
         self.qnet1 = torch.nn.Sequential(torch.nn.Linear(512 + action_dim, 256), torch.nn.ReLU(),
-                                         torch.nn.Linear(256, 64), torch.nn.ReLU(),
-                                         torch.nn.Linear(64, 1))
+                                         torch.nn.Linear(256, 1))
         # Q-Net 2
         self.qnet2 = torch.nn.Sequential(torch.nn.Linear(512 + action_dim, 256), torch.nn.ReLU(),
-                                         torch.nn.Linear(256, 64), torch.nn.ReLU(),
-                                         torch.nn.Linear(64, 1))   
+                                         torch.nn.Linear(256, 1))   
             
     def forward(self, state, action):
         q1 = self.get_Q1(state, action)
