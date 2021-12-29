@@ -10,7 +10,7 @@ class PolicyNetwork(torch.nn.Module):
         #Conv
         self.resnet = torchvision.models.quantization.resnet18(pretrained=True)
         self.resnet.fc = torch.nn.Sequential(torch.nn.Linear(512,128), torch.nn.ReLU(),
-                                          torch.nn.Linear(128, action_dim))
+                                          torch.nn.Linear(128, action_dim), torch.nn.Tanh())
         
     def forward(self, x):
         x = self.resnet(x)

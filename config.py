@@ -22,16 +22,16 @@ class TD3Config:
     DISCOUNT = 0.75
 
     # (int) How many steps are taken to initially fill the replay buffer
-    WARM_START_STEPS = 1000
+    WARM_START_STEPS = 10000
 
     # (int) The maximum number of samples that can be stored in the replay buffer at one time
-    BUFFER_SIZE = 1000
+    BUFFER_SIZE = 10000
 
     # (int) How many samples to take from the replay buffer at once
-    EPISODE_LENGTH = 1000
+    EPISODE_LENGTH = 1000 
 
     # (int) the number of samples in a batch
-    BATCH_SIZE = 32
+    BATCH_SIZE = 100
 
     # (int) The number of iterations before the policy network & target networks are updated
     POLICY_DELAY = 2
@@ -40,10 +40,10 @@ class TD3Config:
     GYM_ENVIRONMENT = 'CarRacing-v0'
 
     # (str) Name of experiement
-    EXPERIMENT_NAME = 'debugging'
+    EXPERIMENT_NAME = 'training-run-1'
 
     # (Union[int, None]) number of GPUs to use (None -> cpu training)
-    GPUS = None
+    GPUS = 1
 
     # (int) save only the top K performing models
     SAVE_TOP_K = 1

@@ -6,6 +6,8 @@ import gym
 import numpy as np
 
 
+device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
+
 # Named tuple for storing experience steps gathered in training
 class Experience(NamedTuple):
     state: np.array
@@ -47,6 +49,8 @@ class ReplayBuffer:
                 np.array(dones, dtype=np.bool), np.array(next_states, dtype=np.float32))
 
 
+
+
 class Agent:
 
     def __init__(self, env: gym.Env, replay_buffer: ReplayBuffer) -> None:
@@ -59,15 +63,13 @@ class Agent:
 
     def get_action(self, policy_network: torch.nn.Module, noise: float) -> np.array:
         # Convert state from numpy array to torch tensor
-        state = torch.tensor((self.state.copy()).astype(np.float32))
-        state = state.permute(2,1,0)
-        state = state.unsqueeze(0)
+        state = torch.tensor((self.state.copy()).astype(np.float32)).permute(2,1,0).unsqueeze(0).to(device)
         # get action from policy network
         action = policy_network(state)
         if noise != 0.0:
-            noise = torch.normal(0, noise, size=action.shape)
+            noise = torch.normal(0, noise, size=action.shape).to(device)
             action = action + noise
-        action = action.numpy()
+        action = action.cpu().numpy()
         return action.clip(self.env.action_space.low, self.env.action_space.high).squeeze()
 
     @torch.no_grad()

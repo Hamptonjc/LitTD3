@@ -6,6 +6,8 @@ import pytorch_lightning as pl
 from networks import PolicyNetwork, QNetworks
 
 
+device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
+
 class LitTD3(pl.LightningModule):
 
 
@@ -63,10 +65,10 @@ class LitTD3(pl.LightningModule):
         # Get the target Q values from target Q-Networks
         with torch.no_grad():
             # select action with target policy and apply clipped noise
-            noise = torch.normal(0, self.config.POLICY_NOISE, size=actions.shape).clamp(-self.config.POLICY_NOISE_CLIP,
-                                                                                            self.config.POLICY_NOISE_CLIP)
-            next_actions = (self.target_policy(next_states) + noise).clamp(torch.tensor(self.trainer.datamodule.env.action_space.low),
-                                                                           torch.tensor(self.trainer.datamodule.env.action_space.high))
+            noise = torch.normal(0, self.config.POLICY_NOISE, size=actions.shape, device=device).clamp(-self.config.POLICY_NOISE_CLIP,
+                                                                                                        self.config.POLICY_NOISE_CLIP)
+            next_actions = (self.target_policy(next_states) + noise).clamp(torch.tensor(self.trainer.datamodule.env.action_space.low).to(device),
+                                                                           torch.tensor(self.trainer.datamodule.env.action_space.high).to(device))
             # compute target Q values
             target_Q1, target_Q2 = self.target_qnets(next_states, next_actions)
             # take minimum of Q1 & Q2
