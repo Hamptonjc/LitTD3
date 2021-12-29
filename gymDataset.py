@@ -5,10 +5,6 @@ import gym
 from agent import *
 
 
-#Experience = collections.namedtuple(
-#    'Experience', field_names=['state', 'action', 'reward',
-#                               'done', 'new_state'])
-
 class GymDataset(torch.utils.data.IterableDataset):
     """
     Iterable Dataset containing the ReplayBuffer
@@ -50,7 +46,7 @@ class LitGymDataset(pl.LightningDataModule):
 
     def train_dataloader(self) -> torch.utils.data.DataLoader:
         dataset = GymDataset(self.replay_buffer, self.config.EPISODE_LENGTH)
-        dataloader = torch.utils.data.DataLoader(dataset, batch_size=self.config.BATCH_SIZE)
+        dataloader = torch.utils.data.DataLoader(dataset, batch_size=self.config.BATCH_SIZE, num_workers=8)
         return dataloader
 
 #    def val_dataloader(self) -> torch.utils.data.DataLoader:
