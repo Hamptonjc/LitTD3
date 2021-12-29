@@ -25,7 +25,7 @@ class QNetworks(torch.nn.Module):
         super().__init__()
         # Conv
         self.qnet1_conv = torchvision.models.quantization.resnet18(pretrained=True)
-        self.qnet1_conv = torch.Sequential(*list(self.resnet.children())[:-3])
+        self.qnet1_conv = torch.nn.Sequential(*list(self.qnet1_conv.children())[:-3])
         self.qnet2_conv = copy.deepcopy(self.qnet1_conv)
         # Q-Net 1
         self.qnet1 = torch.nn.Sequential(torch.nn.Linear(512 + action_dim, 256), torch.nn.ReLU(),

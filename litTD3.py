@@ -9,23 +9,26 @@ from networks import PolicyNetwork, QNetworks
 class LitTD3(pl.LightningModule):
 
 
-    def __init__(self, config: object):
+    def __init__(self, config: object, action_space_len: int) -> None:
         super().__init__()
         self.config = config
+        self.n_iterations = 0
         # Networks
-        self.policy = PolicyNetwork(len(self.datamodule.env.action_space))
-        self.qnets = QNetworks(len(self.datamodule.env.action_space))
+        self.policy = PolicyNetwork(action_dim=action_space_len)
+        self.qnets = QNetworks(action_dim=action_space_len)
         self.target_policy = copy.deepcopy(self.policy)
         self.target_qnets = copy.deepcopy(self.qnets)
-        # Populate replay buffer
-        self.populate_buffer(config.WARM_START_STEPS)
         # Settings
         self.automatic_optimization = False
 
 
+    def on_fit_start(self) -> None:
+        self.populate_buffer(self.config.WARM_START_STEPS)
+
+
     def populate_buffer(self, steps: int) -> None:
         for _ in range(steps):
-            self.datamodule.agent.play_step(self.policy, self.config.EXPLORATION_NOISE) #TODO should we be using this noise?
+            self.trainer.datamodule.agent.play_step(self.policy, self.config.EXPLORATION_NOISE) #TODO should we be using this noise?
 
 
     def q_loss(self, current_Q1, current_Q2, target_Q):
@@ -48,7 +51,7 @@ class LitTD3(pl.LightningModule):
 
     def on_train_batch_start(self, batch: torch.Tensor, batch_idx: int) -> None:
         # Create new experience
-        reward = self.datamodule.agent.play_step(self.policy, self.config.EXPLORATION_NOISE) #TODO is this the correct noise?
+        reward = self.trainer.datamodule.agent.play_step(self.policy, self.config.EXPLORATION_NOISE) #TODO is this the correct noise?
         self.log('reward', reward, on_step=True, prog_bar=True, logger=True) 
 
 
@@ -62,23 +65,23 @@ class LitTD3(pl.LightningModule):
             # select action with target policy and apply clipped noise
             noise = torch.normal(0, self.config.POLICY_NOISE, size=actions.shape).clamp(-self.config.POLICY_NOISE_CLIP,
                                                                                             self.config.POLICY_NOISE_CLIP)
-            next_actions = (self.target_policy(next_states) + noise).clamp(self.env.action_space.low,
-                                                                        self.env.action_space.high)
+            next_actions = (self.target_policy(next_states) + noise).clamp(torch.tensor(self.trainer.datamodule.env.action_space.low),
+                                                                           torch.tensor(self.trainer.datamodule.env.action_space.high))
             # compute target Q values
             target_Q1, target_Q2 = self.target_qnets(next_states, next_actions)
             # take minimum of Q1 & Q2
             target_Q = torch.min(target_Q1, target_Q2)
-            target_Q = rewards + self.conifg.DISCOUNT * (1 - dones) * target_Q #TODO are the dones correct in function?
+            target_Q = rewards + self.config.DISCOUNT * dones * target_Q #TODO are the dones correct in function?
         # compute current Q values
         current_Q1, current_Q2 = self.qnets(states, actions)
         # calculate loss for current qnets
-        qnet_loss = self.q_loss(current_Q1, target_Q, current_Q2, target_Q)
+        qnet_loss = self.q_loss(current_Q1, current_Q2, target_Q)
         # Optimize qnets
         qnets_opt.zero_grad()
         self.manual_backward(qnet_loss)
         qnets_opt.step()
         # Update policy every n steps
-        if (batch_idx + 1) % self.config.UPDATE_POLICY_STEPS == 0:
+        if (self.n_iterations + 1) % self.config.POLICY_DELAY == 0:
             # Calculate policy loss
             policy_loss = self.policy_loss(states)
             # Optimize policy
@@ -93,8 +96,9 @@ class LitTD3(pl.LightningModule):
             for param, target_param in zip(self.policy.parameters(), self.target_policy.parameters()):
                 target_param.data.copy_(self.config.TAU * param.data + \
                                         (1 - self.config.TAU) * target_param.data)
-
+            # Log policy network loss
+            self.log('policy_loss', policy_loss, on_step=True, prog_bar=False, logger=True) 
         # log
         self.log('qnet_loss', qnet_loss, on_step=True, prog_bar=False, logger=True) 
-        self.log('policy_loss', policy_loss, on_step=True, prog_bar=False, logger=True) 
-        return {'qnet_loss': qnet_loss, 'policy_loss': policy_loss}
+        self.n_iterations += 1
+        return {'qnet_loss': qnet_loss.detach()}
