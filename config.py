@@ -19,7 +19,7 @@ class TD3Config:
     POLICY_NOISE_CLIP = 0.5
 
     # (float) The discount value applied to the calculated target Q values
-    DISCOUNT = 1.0
+    DISCOUNT = 0.75
 
     # (int) How many steps are taken to initially fill the replay buffer
     WARM_START_STEPS = 1000
