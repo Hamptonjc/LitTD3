@@ -28,7 +28,7 @@ class TD3Config:
     BUFFER_SIZE = 10000
 
     # (int) How many samples to take from the replay buffer at once
-    EPISODE_LENGTH = 1000 
+    EPISODE_LENGTH = 1000
 
     # (int) the number of samples in a batch
     BATCH_SIZE = 100
@@ -50,3 +50,6 @@ class TD3Config:
 
     # (int) validation step not implemented, however PL needs this anyway
     VAL_CHECK_INTERVAL = 5000
+
+    # (str) path the .ckpt file to start training from OR load to test
+    CHECKPOINT = './experiments/CarRacing-v0-TD3/training-run-1/last.ckpt'
