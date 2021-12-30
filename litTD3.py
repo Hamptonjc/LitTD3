@@ -53,7 +53,7 @@ class LitTD3(pl.LightningModule):
 
     def on_train_batch_start(self, batch: torch.Tensor, batch_idx: int) -> None:
         # Create new experience
-        reward = self.trainer.datamodule.agent.play_step(self.policy, self.config.EXPLORATION_NOISE) #TODO is this the correct noise?
+        reward = self.trainer.datamodule.agent.play_step(self.policy, self.config.EXPLORATION_NOISE)
         self.log('reward', reward, on_step=True, prog_bar=True, logger=True) 
 
 
