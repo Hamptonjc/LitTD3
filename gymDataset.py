@@ -1,5 +1,5 @@
 from typing import Iterator
-import torch
+import torch, torchvision
 import pytorch_lightning as pl
 import gym
 from agent import *
@@ -18,19 +18,16 @@ class GymDataset(torch.utils.data.IterableDataset):
         self.sample_size = sample_size
 
     def __iter__(self) -> Iterator:
-        states, actions, rewards, dones, new_states = self.preprocess(self.buffer.sample(self.sample_size))
+        states, actions, rewards, dones, new_states = self.buffer.sample(self.sample_size)
         for i in range(len(dones)):
-            yield states[i], actions[i], rewards[i], dones[i], new_states[i]
+            state, action, reward, done, new_state = self.preprocess((states[i], actions[i], rewards[i], dones[i], new_states[i]))
+            yield state, action, reward, done, new_state 
 
-    def preprocess(self, experiences):
-        states, actions, rewards, dones, new_states = experiences
-        states = states.transpose(0,3,1,2)
-        rewards = np.expand_dims(rewards, 1)
-        dones = np.expand_dims(dones, 1)
-        new_states = new_states.transpose(0,3,1,2)
-        return states, actions, rewards, dones, new_states
-
-
+    def preprocess(self, experience):
+        state, action, reward, done, new_state = experience
+        state = torchvision.transforms.ToTensor()(state.astype(np.uint8))
+        new_state = torchvision.transforms.ToTensor()(new_state.astype(np.uint8))
+        return state, action, reward, done, new_state
 
 class LitGymDataset(pl.LightningDataModule):
 
