@@ -29,7 +29,6 @@ def train():
                                                   ))
     # Fancy progress bar
     callbacks.append(pl.callbacks.RichProgressBar())
-
     
     # Setup logger
     logger = pl.loggers.TensorBoardLogger('./experiments/',
@@ -39,7 +38,10 @@ def train():
     trainer = pl.Trainer(gpus=config.GPUS,
                          callbacks=callbacks,
                          logger=logger,
-                         val_check_interval=config.VAL_CHECK_INTERVAL)
+                         val_check_interval=config.VAL_CHECK_INTERVAL,
+                         num_sanity_val_steps=0,
+                         max_steps=config.MAX_STEPS)
+
     # Fit
     trainer.fit(model=lit_model, datamodule=lit_gym_ds)
 

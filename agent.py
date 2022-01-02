@@ -44,11 +44,8 @@ class ReplayBuffer:
     def sample(self, batch_size: int) -> Tuple:
         indices = np.random.choice(len(self.buffer), batch_size, replace=False)
         states, actions, rewards, dones, next_states = zip(*[self.buffer[idx] for idx in indices])
-
         return (np.array(states, dtype=np.float32), np.array(actions, dtype=np.float32), np.array(rewards, dtype=np.float32),
-                np.array(dones, dtype=np.bool), np.array(next_states, dtype=np.float32))
-
-
+                np.array(dones, dtype=np.int), np.array(next_states, dtype=np.float32))
 
 
 class Agent:
@@ -73,7 +70,7 @@ class Agent:
         return action.clip(self.env.action_space.low, self.env.action_space.high).squeeze()
 
     @torch.no_grad()
-    def play_step(self, policy_network: torch.nn.Module, action_noise: float = 0.0) -> float:
+    def play_step(self, policy_network: torch.nn.Module, action_noise: float = 0.0) -> Tuple[float, int]:
         # Get action with exploration noise
         action = self.get_action(policy_network, action_noise)
         # take action step in the environment
@@ -87,4 +84,20 @@ class Agent:
         # reset environment if done
         if done:
             self.reset()
-        return reward
+        return reward, done
+
+    def play_random_step(self) -> None:
+        # Get action with exploration noise
+        s, t, b = np.random.uniform(-1,1,1), np.random.uniform(0,1,1), np.random.uniform(0,1,1)
+        action = np.concatenate([s, t, b], 0)
+        # take action step in the environment
+        new_state, reward, done, _ = self.env.step(action)
+        # Create experience object
+        exp = Experience(self.state, action, reward, done, new_state)
+        # add experience to replay buffer
+        self.replay_buffer.append(exp)
+        # Update state of agent with the newly experienced state
+        self.state = new_state
+        # reset environment if done
+        if done:
+            self.reset()

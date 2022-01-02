@@ -19,7 +19,7 @@ class TD3Config:
     POLICY_NOISE_CLIP = 0.5
 
     # (float) The discount value applied to the calculated target Q values
-    DISCOUNT = 0.75
+    DISCOUNT = 0.99
 
     # (int) How many steps are taken to initially fill the replay buffer
     WARM_START_STEPS = 10000
@@ -40,7 +40,7 @@ class TD3Config:
     GYM_ENVIRONMENT = 'CarRacing-v0'
 
     # (str) Name of experiement
-    EXPERIMENT_NAME = 'training-run-1'
+    EXPERIMENT_NAME = 'revamp-train-1'
 
     # (Union[int, None]) number of GPUs to use (None -> cpu training)
     GPUS = 1
@@ -48,8 +48,14 @@ class TD3Config:
     # (int) save only the top K performing models
     SAVE_TOP_K = 1
 
-    # (int) validation step not implemented, however PL needs this anyway
-    VAL_CHECK_INTERVAL = 5000
+    # (int) How often (in steps) to run validation
+    VAL_CHECK_INTERVAL = 5_000
 
     # (str) path the .ckpt file to start training from OR load to test
-    CHECKPOINT = './experiments/CarRacing-v0-TD3/training-run-1/last.ckpt'
+    CHECKPOINT = './experiments/CarRacing-v0-TD3/training-run-5/epoch=249-reward=-0.0838297382.ckpt'
+
+    # (int) Number of episodes ran for validation
+    VAL_EPISODES = 10
+
+    # (int) max number of steps to train for
+    MAX_STEPS = 1_000_000

@@ -4,7 +4,7 @@ import copy
 import torch
 import pytorch_lightning as pl
 from networks import PolicyNetwork, QNetworks
-
+from rich import print as rich_print
 
 device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
 
@@ -30,7 +30,7 @@ class LitTD3(pl.LightningModule):
 
     def populate_buffer(self, steps: int) -> None:
         for _ in range(steps):
-            self.trainer.datamodule.agent.play_step(self.policy, self.config.EXPLORATION_NOISE) #TODO should we be using this noise?
+            self.trainer.datamodule.agent.play_random_step()
 
 
     def q_loss(self, current_Q1, current_Q2, target_Q):
@@ -51,13 +51,15 @@ class LitTD3(pl.LightningModule):
         return self.target_policy(x)
 
 
-    def on_train_batch_start(self, batch: torch.Tensor, batch_idx: int) -> None:
+    def on_train_batch_start(self, *args, **kwargs) -> None:
+        # Do live validation if time to
+        if (self.n_iterations + 1) % self.config.VAL_CHECK_INTERVAL == 0:
+            self.live_validation()
         # Create new experience
-        reward = self.trainer.datamodule.agent.play_step(self.policy, self.config.EXPLORATION_NOISE)
-        self.log('reward', reward, on_step=True, prog_bar=True, logger=True) 
+        self.trainer.datamodule.agent.play_step(self.policy, self.config.EXPLORATION_NOISE)
 
 
-    def training_step(self, batch: torch.Tensor, batch_idx: int) -> Dict[str, torch.Tensor] :
+    def training_step(self, batch: torch.Tensor, batch_idx: int) -> None:
         # Get optimizers
         policy_opt, qnets_opt = self.optimizers()
         # Unpack batch
@@ -73,7 +75,7 @@ class LitTD3(pl.LightningModule):
             target_Q1, target_Q2 = self.target_qnets(next_states, next_actions)
             # take minimum of Q1 & Q2
             target_Q = torch.min(target_Q1, target_Q2)
-            target_Q = rewards + self.config.DISCOUNT * dones * target_Q #TODO are the dones correct in function?
+            target_Q = rewards + self.config.DISCOUNT * (1 - dones) * target_Q
         # compute current Q values
         current_Q1, current_Q2 = self.qnets(states, actions)
         # calculate loss for current qnets
@@ -103,4 +105,22 @@ class LitTD3(pl.LightningModule):
         # log
         self.log('qnet_loss', qnet_loss, on_step=True, prog_bar=False, logger=True) 
         self.n_iterations += 1
-        return {'qnet_loss': qnet_loss.detach()}
+
+
+    def live_validation(self) -> None:
+        print("Running Live Validation...")
+        # Initalize episode counter & rewards list
+        episode_count = 0
+        rewards = []
+        # Reset environment
+        self.trainer.datamodule.agent.reset()
+        # While number of validation episodes hasn't been reached
+        while episode_count < self.config.VAL_EPISODES:
+            # play step
+            reward, done = self.trainer.datamodule.agent.play_step(self.policy, 0.0)
+            # add reward to rewards list
+            rewards.append(reward)
+            # Increase episode count if done
+            episode_count += done
+        # log the average reward over n episodes
+        self.log('reward', sum(rewards)/len(rewards), on_step=True, prog_bar=True, logger=True) 

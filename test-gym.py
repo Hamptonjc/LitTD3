@@ -19,4 +19,3 @@ with torch.no_grad():
         if done:
             break
 env.close()
-

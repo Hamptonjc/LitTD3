@@ -27,7 +27,11 @@ class GymDataset(torch.utils.data.IterableDataset):
         state, action, reward, done, new_state = experience
         state = torchvision.transforms.ToTensor()(state.astype(np.uint8))
         new_state = torchvision.transforms.ToTensor()(new_state.astype(np.uint8))
+        done = torch.tensor([done], dtype=torch.int)
+        action = torch.tensor(action, dtype=torch.float32)
+        reward = torch.tensor([reward], dtype=torch.float32)
         return state, action, reward, done, new_state
+
 
 class LitGymDataset(pl.LightningDataModule):
 
@@ -45,8 +49,3 @@ class LitGymDataset(pl.LightningDataModule):
         dataset = GymDataset(self.replay_buffer, self.config.EPISODE_LENGTH)
         dataloader = torch.utils.data.DataLoader(dataset, batch_size=self.config.BATCH_SIZE, num_workers=8)
         return dataloader
-
-#    def val_dataloader(self) -> torch.utils.data.DataLoader:
-#        dataset = GymDataset(self.replay_buffer, self.config.SAMPLE_SIZE)
-#        dataloader = torch.utils.data.DataLoader(dataset, batch_size=self.config.BATCH_SIZE)
-#        return dataloader
