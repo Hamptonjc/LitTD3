@@ -1,23 +1,23 @@
 # Imports
-from typing import Dict
-import copy
+from typing import Union, Tuple
+import copy, os
 import torch
 import pytorch_lightning as pl
 from networks import PolicyNetwork, QNetworks
-from rich import print as rich_print
 
 device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
 
 class LitTD3(pl.LightningModule):
 
 
-    def __init__(self, config: object, action_space_len: int) -> None:
+    def __init__(self, config: object, action_space_len: int, 
+                 state_dims: int, state_space_len: Union[int, None]) -> None:
         super().__init__()
         self.config = config
         self.n_iterations = 0
         # Networks
-        self.policy = PolicyNetwork(action_dim=action_space_len)
-        self.qnets = QNetworks(action_dim=action_space_len)
+        self.policy = PolicyNetwork(action_space_len, state_dims, state_space_len)
+        self.qnets = QNetworks(action_space_len, state_dims, state_space_len)
         self.target_policy = copy.deepcopy(self.policy)
         self.target_qnets = copy.deepcopy(self.qnets)
         # Settings
@@ -33,15 +33,17 @@ class LitTD3(pl.LightningModule):
             self.trainer.datamodule.agent.play_random_step()
 
 
-    def q_loss(self, current_Q1, current_Q2, target_Q):
-        return torch.nn.functional.mse_loss(current_Q1, target_Q) + torch.nn.functional.mse_loss(current_Q2, target_Q)
+    def q_loss(self, current_Q1: torch.Tensor,
+               current_Q2: torch.Tensor, target_Q: torch.Tensor) -> torch.Tensor:
+        return torch.nn.functional.mse_loss(current_Q1, target_Q) + \
+                torch.nn.functional.mse_loss(current_Q2, target_Q)
 
 
     def policy_loss(self, states: torch.Tensor) -> torch.Tensor:
         return -self.qnets.get_Q1(states, self.policy(states)).mean()
 
 
-    def configure_optimizers(self):
+    def configure_optimizers(self) -> Tuple[torch.optim.Optimizer]:
         policy_opt = torch.optim.Adam(self.policy.parameters(), lr=self.config.POLICY_LR)
         qnets_opt = torch.optim.Adam(self.qnets.parameters(), lr=self.config.QNETS_LR)
         return policy_opt, qnets_opt
@@ -67,10 +69,12 @@ class LitTD3(pl.LightningModule):
         # Get the target Q values from target Q-Networks
         with torch.no_grad():
             # select action with target policy and apply clipped noise
-            noise = torch.normal(0, self.config.POLICY_NOISE, size=actions.shape, device=device).clamp(-self.config.POLICY_NOISE_CLIP,
-                                                                                                        self.config.POLICY_NOISE_CLIP)
-            next_actions = (self.target_policy(next_states) + noise).clamp(torch.tensor(self.trainer.datamodule.env.action_space.low).to(device),
-                                                                           torch.tensor(self.trainer.datamodule.env.action_space.high).to(device))
+            noise = torch.normal(0, self.config.POLICY_NOISE,
+                                 size=actions.shape, device=device).clamp(-self.config.POLICY_NOISE_CLIP,
+                                                                           self.config.POLICY_NOISE_CLIP)
+            next_actions = (self.target_policy(next_states) + noise).clamp(
+                torch.tensor(self.trainer.datamodule.env.action_space.low).to(device),
+                torch.tensor(self.trainer.datamodule.env.action_space.high).to(device))
             # compute target Q values
             target_Q1, target_Q2 = self.target_qnets(next_states, next_actions)
             # take minimum of Q1 & Q2
@@ -108,7 +112,6 @@ class LitTD3(pl.LightningModule):
 
 
     def live_validation(self) -> None:
-        print("Running Live Validation...")
         # Initalize episode counter & rewards list
         episode_count = 0
         rewards = []
@@ -123,4 +126,4 @@ class LitTD3(pl.LightningModule):
             # Increase episode count if done
             episode_count += done
         # log the average reward over n episodes
-        self.log('reward', sum(rewards)/len(rewards), on_step=True, prog_bar=True, logger=True) 
+        self.log('reward', sum(rewards)/len(rewards), on_step=True, prog_bar=True, logger=True)

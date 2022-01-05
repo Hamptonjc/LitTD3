@@ -37,10 +37,10 @@ class TD3Config:
     POLICY_DELAY = 2
 
     # (str) name of OpenAI Gym environment (Note: this system is designed for a 2-dimensional pixel state space)
-    GYM_ENVIRONMENT = 'CarRacing-v0'
+    GYM_ENVIRONMENT = "HalfCheetah-v2"
 
     # (str) Name of experiement
-    EXPERIMENT_NAME = 'revamp-train-1'
+    EXPERIMENT_NAME = 'debug'
 
     # (Union[int, None]) number of GPUs to use (None -> cpu training)
     GPUS = 1
@@ -52,7 +52,7 @@ class TD3Config:
     VAL_CHECK_INTERVAL = 5_000
 
     # (str) path the .ckpt file to start training from OR load to test
-    CHECKPOINT = './experiments/CarRacing-v0-TD3/training-run-5/epoch=249-reward=-0.0838297382.ckpt'
+    CHECKPOINT = 'experiments/CarRacing-v0-TD3/revamp-train-1/last.ckpt'
 
     # (int) Number of episodes ran for validation
     VAL_EPISODES = 10

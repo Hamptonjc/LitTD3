@@ -60,7 +60,10 @@ class Agent:
 
     def get_action(self, policy_network: torch.nn.Module, noise: float) -> np.array:
         # Convert state from numpy array to torch tensor
-        state = torch.tensor((self.state.copy()).astype(np.float32)).permute(2,1,0).unsqueeze(0).to(device)
+        if len(self.env.observation_space.shape) > 1:
+            state = torch.tensor((self.state.copy()).astype(np.float32)).permute(2,1,0).unsqueeze(0).to(device)
+        else:
+            state = torch.tensor((self.state.copy()).astype(np.float32)).unsqueeze(0).to(device)
         # get action from policy network
         action = policy_network(state)
         if noise != 0.0:
@@ -88,8 +91,10 @@ class Agent:
 
     def play_random_step(self) -> None:
         # Get action with exploration noise
-        s, t, b = np.random.uniform(-1,1,1), np.random.uniform(0,1,1), np.random.uniform(0,1,1)
-        action = np.concatenate([s, t, b], 0)
+        actions = []
+        for l, h in zip(self.env.action_space.low, self.env.action_space.high):
+            actions.append(np.random.uniform(l,h,1))
+        action = np.concatenate(actions, 0)
         # take action step in the environment
         new_state, reward, done, _ = self.env.step(action)
         # Create experience object

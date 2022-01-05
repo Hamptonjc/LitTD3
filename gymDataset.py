@@ -25,8 +25,12 @@ class GymDataset(torch.utils.data.IterableDataset):
 
     def preprocess(self, experience):
         state, action, reward, done, new_state = experience
-        state = torchvision.transforms.ToTensor()(state.astype(np.uint8))
-        new_state = torchvision.transforms.ToTensor()(new_state.astype(np.uint8))
+        if len(state.shape) > 1:
+            state = torchvision.transforms.ToTensor()(state.astype(np.uint8))
+            new_state = torchvision.transforms.ToTensor()(new_state.astype(np.uint8))
+        else:
+            state = torch.tensor(state, dtype=torch.float32)
+            new_state = torch.tensor(new_state, dtype=torch.float32)
         done = torch.tensor([done], dtype=torch.int)
         action = torch.tensor(action, dtype=torch.float32)
         reward = torch.tensor([reward], dtype=torch.float32)
