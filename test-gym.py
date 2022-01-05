@@ -2,14 +2,22 @@ import gym, torch
 from litTD3 import LitTD3
 from config import TD3Config as config
 
-litTD3 = LitTD3.load_from_checkpoint(config.CHECKPOINT, config=config, action_space_len=3)
-policy = litTD3.policy
-policy.eval()
 
 env = gym.make(config.GYM_ENVIRONMENT)
 state = env.reset()
-for h, l in zip(env.action_space.high, env.action_space.low):
-    print(h, l)
+
+n_actions = env.action_space.shape[0]
+state_dims = len(env.observation_space.shape)
+if state_dims == 1:
+    state_len = env.observation_space.shape[0]
+else:
+    state_len = None
+
+litTD3 = LitTD3.load_from_checkpoint(config.CHECKPOINT, config=config,
+                                     action_space_len=n_actions,
+                                     state_dims=state_dims, state_space_len=state_len)
+policy = litTD3.policy
+policy.eval()
 
 with torch.no_grad():
     while True:
