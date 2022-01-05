@@ -5,15 +5,21 @@ from gymDataset import LitGymDataset
 from config import TD3Config as config
 
 
-def train():
+def train() -> None:
     # Seed RNG
     torch.manual_seed(314)
     # Instatiate lit Data
     lit_gym_ds = LitGymDataset(config)
     lit_gym_ds.setup()
+    # Get environment info
     n_actions = lit_gym_ds.env.action_space.shape[0]
+    state_dims = len(lit_gym_ds.env.observation_space.shape)
+    if state_dims == 1:
+        state_len = lit_gym_ds.env.observation_space.shape[0]
+    else:
+        state_len = None
     # Instatiate litTD3
-    lit_model = LitTD3(config, n_actions)
+    lit_model = LitTD3(config, n_actions, state_dims, state_len)
     # Add callbacks
     callbacks = []
     # checkpointing
