@@ -2,6 +2,8 @@ FROM pytorch/pytorch:latest
 
 RUN conda create --name TD3
 
+RUN apt update && apt install build-essential swig -y
+
 RUN conda run -n TD3 pip install gym[box2d] pyglet pytorch_lightning rich
 
 RUN apt-get update && \
