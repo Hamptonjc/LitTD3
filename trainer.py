@@ -95,7 +95,7 @@ class StandardTD3Trainer(BaseTrainer):
                             mode='max', save_last=True,
                             every_n_train_steps=self.config.VAL_CHECK_INTERVAL))
         # Fancy progress bar
-        callbacks.append(pl.callbacks.RichProgressBar())
+        callbacks.append(CustomProgressBar())
         return callbacks
 
     def _get_loggers(self) -> List[pl.loggers.base.LightningLoggerBase]:
@@ -120,6 +120,12 @@ class StandardTD3Trainer(BaseTrainer):
             max_steps=self.config.MAX_STEPS)
         return trainer
 
+
+class CustomProgressBar(pl.callbacks.progress.ProgressBar):
+
+    def on_train_epoch_start(self, trainer, pl_module):
+        super().on_train_epoch_start(trainer, pl_module)
+        self.main_progress_bar.set_description(f"Step {pl_module.n_iterations}")
 
 if __name__ == '__main__':
     trainer = StandardTD3Trainer(MasterConfig)
