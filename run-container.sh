@@ -8,5 +8,5 @@ docker run \
 	-w /LitTD3 \
 	--shm-size=16g \
 	--rm \
-	lit_td3:latest \
+	hamptonjc/lit_td3:latest \
 	/bin/bash 
