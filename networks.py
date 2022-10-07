@@ -1,6 +1,7 @@
 # Imports
 import copy
 import torch, torchvision
+from master_config import MasterConfig
 
 
 #####################################################################
@@ -19,12 +20,13 @@ class ActorNetworkBase(torch.nn.Module):
     """
 
     def __init__(self, config: MasterConfig) -> None:
+        super().__init__()
         self.config = config
 
 
     def forward(self, state: torch.Tensor) -> torch.Tensor:
         action = self.network(state)
-        return action
+        return torch.tensor(self.config.MAX_ACTION).type_as(action) * action
 
 
 class TwoDimStateActorNetwork(ActorNetworkBase):
@@ -39,14 +41,14 @@ class TwoDimStateActorNetwork(ActorNetworkBase):
         super().__init__(config)
         # Create network
         self.network = \
-            torchvision.models.quantization.mobilenet_v2(
+            torchvision.models.mobilenet_v2(
                             pretrained=config.PRETRAINED)
         self.network.classifier = torch.nn.Sequential(
                                     torch.nn.Dropout(p=0.2),
                                     torch.nn.Linear(1280,256),
                                     torch.nn.ReLU(),
                                     torch.nn.Linear(256, 
-                                        config.action_space_len),
+                                        config.ACTION_SPACE_LEN),
                                     torch.nn.Tanh())
 
 
@@ -63,12 +65,12 @@ class OneDimStateActorNetwork(ActorNetworkBase):
  
         self.network = torch.nn.Sequential(
                             torch.nn.Linear(
-                                config.state_space_len, 256),
+                                config.STATE_SPACE_LEN, 256),
                             torch.nn.ReLU(),
                             torch.nn.Linear(256,256),
                             torch.nn.ReLU(),
                             torch.nn.Linear(
-                                256, config.action_space_len),
+                                256, config.ACTION_SPACE_LEN),
                             torch.nn.Tanh())
 
 
@@ -88,6 +90,7 @@ class CriticsNetworkBase(torch.nn.Module):
     """
 
     def __init__(self, config: MasterConfig) -> None:
+        super().__init__()
         self.config = config
 
     
@@ -126,19 +129,19 @@ class TwoDimStateCriticNetworks(CriticsNetworkBase):
     """
 
     def __init__(self, config: MasterConfig) -> None:
-        super().__init__()
+        super().__init__(config)
         # CNN
         self.critic1_conv =\
-            torchvision.models.quantization.mobilenet_v2(pretrained=True)
+            torchvision.models.mobilenet_v2(pretrained=True)
         self.critic1_conv = torch.nn.Sequential(
-                *list(self.critic1_conv.children())[:-3],
+                *list(self.critic1_conv.children())[:-1],
                 torch.nn.AdaptiveAvgPool2d((1,1)))
         self.critic2_conv = copy.deepcopy(self.critic1_conv)
         # Linear Network
         self.critic1 = torch.nn.Sequential(
                         torch.nn.Dropout(p=0.2), 
                         torch.nn.Linear(
-                            1280 + config.action_space_len, 256),
+                            1280 + config.ACTION_SPACE_LEN, 256),
                         torch.nn.ReLU(),
                         torch.nn.Linear(256, 1))
         self.critic2 = copy.deepcopy(self.critic1)
@@ -172,10 +175,10 @@ class OneDimStateCriticNetworks(CriticsNetworkBase):
     """
 
     def __init__(self, config: MasterConfig) -> None:
-        super().__init__()
+        super().__init__(config)
         self.critic1 = torch.nn.Sequential(
-            torch.nn.Linear(config.state_space_len + \
-                            config.action_space_len,256),
+            torch.nn.Linear(config.STATE_SPACE_LEN+ \
+                            config.ACTION_SPACE_LEN,256),
             torch.nn.ReLU(),
             torch.nn.Linear(256,256),
             torch.nn.ReLU(),

@@ -11,12 +11,12 @@ RUN apt-get update && \
 
 RUN echo 'Xvfb&' >> /root/.bashrc
 
-RUN echo 'export PS1="\[$(tput bold)\]\[\033[38;5;93m\]Lit-TD3-Docker\[⚡\]\[$(tput sgr0)\]\[$(tput sgr0)\]:\w\\$\[$(tput sgr0)\] "' >> /root/.bashrc
+RUN echo 'export PS1="\[$(tput bold)\]\[\033[38;5;4m\]\]Lit-TD3-Docker\[⚡\]\[$(tput sgr0)\]\[$(tput sgr0)\]:\w\\$\[$(tput sgr0)\] "' >> /root/.bashrc
 
 ENV CONDA_DEFAULT_ENV TD3
 
 # Install mujoco
-RUN conda run pip install -U 'mujoco-py==2.1.*'
+RUN conda run -n TD3 pip install mujoco
 
 RUN mkdir /root/.mujoco/ && \
     apt-get install wget gcc libosmesa6-dev libglfw3 -y && \
