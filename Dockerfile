@@ -27,3 +27,6 @@ RUN mkdir /root/.mujoco/ && \
     ln -s /usr/lib/x86_64-linux-gnu/libGL.so.1 /usr/lib/x86_64-linux-gnu/libGL.so
 
 
+RUN conda run -n TD3 pip install imageio
+
+
